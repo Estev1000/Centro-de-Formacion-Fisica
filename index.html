@@ -673,11 +673,12 @@
                 <div class="section-title">Buscar Miembro</div>
 
                 <div class="form-card mb-4">
-                    <h5 class="mb-3"><i class="fas fa-search me-2"></i>Buscar por ID</h5>
+                    <h5 class="mb-3"><i class="fas fa-search me-2"></i>Buscar Miembro</h5>
                     <form id="formBuscarUsuario" class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">ID del Miembro</label>
-                            <input id="usuario_id_buscar" type="number" class="form-control" required>
+                        <div class="col-md-8">
+                            <label class="form-label">DNI, Nombre o ID del Miembro</label>
+                            <input id="usuario_id_buscar" type="text" class="form-control"
+                                placeholder="Ingresa DNI, Apellido o ID..." required>
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary-custom btn-custom">
@@ -728,6 +729,56 @@
                 <div id="listaClasesUsuarioContainer" class="d-none">
                     <h5 class="mb-3"><i class="fas fa-dumbbell me-2"></i>Clases del Miembro</h5>
                     <ul id="listaClasesUsuario" class="list-group"></ul>
+                </div>
+            </div>
+
+            <!-- Clases -->
+            <div class="tab-pane fade" id="clases" role="tabpanel">
+                <div class="section-title">Gestión de Clases</div>
+
+                <div class="form-card mb-4">
+                    <h5 class="mb-3"><i class="fas fa-plus-circle me-2"></i>Crear Nueva Clase</h5>
+                    <form id="formRegistrarClase" class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre de la Clase</label>
+                            <input id="nombre_clase" name="nombre" class="form-control" required
+                                placeholder="Ej: Yoga, Crossfit...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Horario</label>
+                            <input id="horario_clase" name="horario" class="form-control" required
+                                placeholder="Ej: Lun y Mie 18:00hs">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción</label>
+                            <textarea id="descripcion_clase" name="descripcion" class="form-control"
+                                rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary-custom btn-custom me-2">
+                                <i class="fas fa-save me-2"></i>Crear Clase
+                            </button>
+                            <button type="button" id="btnMostrarClases" class="btn btn-outline-custom btn-custom">
+                                <i class="fas fa-list me-2"></i>Ver Todas las Clases
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="tablaClasesContainer" class="d-none">
+                    <h5 class="mb-3"><i class="fas fa-dumbbell me-2"></i>Actividades Disponibles</h5>
+                    <table id="tablaClases" class="table table-custom w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Horario</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -1382,10 +1433,19 @@
             // BUSCAR USUARIO
             $('#formBuscarUsuario').submit(e => {
                 e.preventDefault();
-                const id = document.getElementById('usuario_id_buscar').value;
-                const user = storage.getUsuario(id);
+                const busqueda = document.getElementById('usuario_id_buscar').value.trim().toLowerCase();
+                const usuarios = storage.getUsuarios();
+
+                // Intentar buscar por: ID, DNI o Nombre/Apellido
+                const user = usuarios.find(u =>
+                    u.id.toString() === busqueda ||
+                    (u.dni && u.dni.toString() === busqueda) ||
+                    (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                    (u.apellido && u.apellido.toLowerCase().includes(busqueda))
+                );
 
                 if (user) {
+                    const id = user.id;
                     const container = document.getElementById('infoUsuario');
                     const clasesUsuario = storage.getClasesUsuario(id);
                     const clasesHtml = clasesUsuario.length > 0
