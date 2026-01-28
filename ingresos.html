@@ -48,21 +48,21 @@
         <div class="card p-4 mb-4">
             <h5 class="mb-3"><i class="fas fa-search me-2"></i>Búsqueda de Miembros</h5>
             <form id="formBuscar" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">ID del Miembro</label>
-                    <input type="number" id="inputMiembro" class="form-control" placeholder="Ej: 1">
+                <div class="col-md-4">
+                    <label class="form-label">ID o DNI del Miembro</label>
+                    <input type="text" id="inputBusquedaPrincipal" class="form-control" placeholder="Ej: 1 o 12345678">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Teléfono</label>
                     <input type="text" id="inputTelefono" class="form-control" placeholder="Ej: 123-456-7890">
                 </div>
-                <div class="col-md-3">
-                    <button class="btn btn-primary-custom btn-custom" type="submit">
+                <div class="col-md-2">
+                    <button class="btn btn-primary-custom btn-custom w-100" type="submit">
                         <i class="fas fa-search me-2"></i>Buscar
                     </button>
                 </div>
-                <div class="col-md-3">
-                    <button type="button" id="btnMostrarTodos" class="btn btn-outline-primary btn-custom">
+                <div class="col-md-2">
+                    <button type="button" id="btnMostrarTodos" class="btn btn-outline-primary btn-custom w-100">
                         <i class="fas fa-list me-2"></i>Ver Todos
                     </button>
                 </div>
@@ -214,21 +214,27 @@
             }
         });
 
-        // Buscar miembro (mejorado)
+        // Buscar miembro (unificado)
         $('#formBuscar').on('submit', function (e) {
             e.preventDefault();
-            const id = $('#inputMiembro').val().trim();
+            const busqueda = $('#inputBusquedaPrincipal').val().trim();
             const telefono = $('#inputTelefono').val().trim();
 
             let usuario = null;
+            const usuarios = storage.getUsuarios();
 
-            // Buscar por ID
-            if (id) {
-                usuario = storage.getUsuario(id);
+            if (busqueda) {
+                // Intentar buscar por ID (si es un número exacto)
+                usuario = usuarios.find(u => u.id === parseInt(busqueda));
+
+                // Si no se encontró por ID, intentar buscar por DNI
+                if (!usuario) {
+                    usuario = usuarios.find(u => u.dni && String(u.dni).includes(busqueda));
+                }
             }
-            // Buscar por teléfono si no se encontró por ID
-            else if (telefono) {
-                const usuarios = storage.getUsuarios();
+
+            // Si no se encontró nada y hay teléfono, buscar por teléfono
+            if (!usuario && telefono) {
                 usuario = usuarios.find(u => u.telefono && u.telefono.includes(telefono));
             }
 
@@ -236,7 +242,7 @@
                 mostrarMiembro(usuario);
                 $('#listaMiembrosContainer').addClass('d-none');
             } else {
-                alert('Miembro no encontrado. Intente con otro ID o teléfono.');
+                alert('Miembro no encontrado. Intente con ID, DNI o teléfono.');
                 $('#resultadoBusqueda').addClass('d-none');
             }
         });
@@ -342,7 +348,7 @@
 
             alert(mensaje);
             $('#resultadoBusqueda').addClass('d-none');
-            $('#inputMiembro').val('');
+            $('#inputBusquedaPrincipal').val('');
             $('#inputTelefono').val('');
             refrescarTabla();
         }
