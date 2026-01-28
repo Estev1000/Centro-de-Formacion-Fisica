@@ -457,7 +457,7 @@
                         <div class="stat-label">Miembros Activos</div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
+                <div class="col-lg-3 col-md-6 d-none">
                     <div class="stat-card">
                         <div class="stat-icon" style="background: var(--success-gradient);">
                             <i class="fas fa-dollar-sign"></i>
@@ -619,8 +619,9 @@
                     <h5 class="mb-3"><i class="fas fa-credit-card me-2"></i>Registrar Nuevo Pago</h5>
                     <form id="formRegistrarPago" class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">ID del Miembro</label>
-                            <input id="usuario_pago" name="usuario_id" type="number" class="form-control" required>
+                            <label class="form-label">ID o DNI del Miembro</label>
+                            <input id="usuario_pago" name="usuario_id" type="text" list="membersList"
+                                class="form-control" required placeholder="Ej: 1 o 12345678">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Fecha</label>
@@ -661,10 +662,51 @@
                                 <th>Fecha</th>
                                 <th>Monto</th>
                                 <th>Tipo</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Modal para Editar Pago -->
+            <div class="modal fade" id="editarPagoModal" tabindex="-1" aria-labelledby="editarPagoModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editarPagoModalLabel">Editar Pago</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="formEditarPago">
+                                <input type="hidden" id="edit_pago_id">
+                                <div class="mb-3">
+                                    <label for="edit_usuario_pago" class="form-label">ID del Miembro</label>
+                                    <input type="text" class="form-control" id="edit_usuario_pago" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="edit_fecha_pago" class="form-label">Fecha</label>
+                                    <input type="date" class="form-control" id="edit_fecha_pago" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="edit_monto_pago" class="form-label">Monto</label>
+                                    <input type="number" step="0.01" class="form-control" id="edit_monto_pago" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="edit_tipo_pago" class="form-label">Tipo de Pago</label>
+                                    <select class="form-control" id="edit_tipo_pago" required>
+                                        <option value="Mensualidad">Mensualidad</option>
+                                        <option value="Inscripción">Inscripción</option>
+                                        <option value="Personal Training">Personal Training</option>
+                                        <option value="Otros">Otros</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom">Guardar Cambios</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -707,8 +749,9 @@
                     <h5 class="mb-3"><i class="fas fa-user-plus me-2"></i>Inscribir Miembro</h5>
                     <form id="formClasesUsuario" class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">ID del Miembro</label>
-                            <input id="usuario_clase" type="number" class="form-control" required>
+                            <label class="form-label">ID o DNI del Miembro</label>
+                            <input id="usuario_clase" type="text" list="membersList" class="form-control" required
+                                placeholder="Ej: 1 o 12345678">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Clase</label>
@@ -1009,12 +1052,34 @@
                 return JSON.parse(localStorage.getItem('gym_pagos') || '[]');
             }
 
+            getPago(id) {
+                const pagos = this.getPagos();
+                return pagos.find(p => p.id === parseInt(id));
+            }
+
             addPago(pago) {
                 const pagos = this.getPagos();
                 pago.id = this.getNextId();
                 pagos.push(pago);
                 localStorage.setItem('gym_pagos', JSON.stringify(pagos));
                 return pago;
+            }
+
+            updatePago(id, data) {
+                let pagos = this.getPagos();
+                pagos = pagos.map(p => {
+                    if (p.id === parseInt(id)) {
+                        return { ...p, ...data, id: parseInt(id) };
+                    }
+                    return p;
+                });
+                localStorage.setItem('gym_pagos', JSON.stringify(pagos));
+            }
+
+            deletePago(id) {
+                let pagos = this.getPagos();
+                pagos = pagos.filter(p => p.id !== parseInt(id));
+                localStorage.setItem('gym_pagos', JSON.stringify(pagos));
             }
 
             // CLASES
@@ -1063,6 +1128,18 @@
                 inscripciones.push(inscripcion);
                 localStorage.setItem('gym_inscripciones', JSON.stringify(inscripciones));
                 return inscripcion;
+            }
+
+            deleteInscripcion(id) {
+                let inscripciones = this.getInscripciones();
+                inscripciones = inscripciones.filter(i => i.id !== parseInt(id));
+                localStorage.setItem('gym_inscripciones', JSON.stringify(inscripciones));
+            }
+
+            deleteInscripcionByUserAndClass(usuarioId, claseId) {
+                let inscripciones = this.getInscripciones();
+                inscripciones = inscripciones.filter(i => i.usuario_id !== parseInt(usuarioId) || i.clase_id !== parseInt(claseId));
+                localStorage.setItem('gym_inscripciones', JSON.stringify(inscripciones));
             }
 
             getClasesUsuario(usuarioId) {
@@ -1308,6 +1385,34 @@
                 }
             });
 
+            // DataList Member update
+            function updateMembersDatalist() {
+                const members = storage.getUsuarios();
+                const datalist = document.getElementById('membersList');
+                if (!datalist) {
+                    const dl = document.createElement('datalist');
+                    dl.id = 'membersList';
+                    document.body.appendChild(dl);
+                }
+                document.getElementById('membersList').innerHTML = members.map(u =>
+                    `<option value="${u.id}">${u.nombre} ${u.apellido} (DNI: ${u.dni})</option>`
+                ).join('');
+            }
+            updateMembersDatalist();
+
+            // Refresh datalist when users change
+            const originalAddUsuario = storage.addUsuario;
+            storage.addUsuario = function (u) {
+                const res = originalAddUsuario.call(this, u);
+                updateMembersDatalist();
+                return res;
+            };
+            const originalDeleteUsuario = storage.deleteUsuario;
+            storage.deleteUsuario = function (id) {
+                originalDeleteUsuario.call(this, id);
+                updateMembersDatalist();
+            };
+
             // DataTables para pagos
             const tablaPagos = $("#tablaPagos").DataTable({
                 destroy: true,
@@ -1376,7 +1481,9 @@
                     p.usuario_id,
                     p.fecha,
                     `$${p.monto}`,
-                    p.tipo
+                    p.tipo,
+                    `<button class="btn btn-sm btn-outline-primary me-1" onclick="abrirEditarPago(${p.id})"><i class="fas fa-edit"></i></button>
+                     <button class="btn btn-sm btn-outline-danger" onclick="eliminarPago(${p.id})"><i class="fas fa-trash"></i></button>`
                 ]));
                 tablaPagos.draw();
                 showContainer('tablaPagosContainer');
@@ -1387,14 +1494,24 @@
                 const formData = new FormData(e.target);
                 const body = Object.fromEntries(formData);
                 body.monto = parseFloat(body.monto);
-                body.usuario_id = parseInt(body.usuario_id);
+                const inputVal = body.usuario_id.toString().trim();
 
-                // Verificar que el usuario existe
-                const usuario = storage.getUsuario(body.usuario_id);
+                // 1. Buscar por ID primero
+                let usuario = storage.getUsuario(inputVal);
+
+                // 2. Si no existe por ID, buscar por DNI
                 if (!usuario) {
-                    showAlert('Usuario no encontrado', 'danger');
+                    const usuarios = storage.getUsuarios();
+                    usuario = usuarios.find(u => u.dni && String(u.dni) === inputVal);
+                }
+
+                if (!usuario) {
+                    showAlert('Usuario no encontrado (verifica DNI o ID)', 'danger');
                     return;
                 }
+
+                // Usar el ID real del usuario encontrado
+                body.usuario_id = usuario.id;
 
                 // Lógica de Renovación Automática
                 let mensajeExtra = "";
@@ -1427,6 +1544,42 @@
                 showAlert(`Pago registrado correctamente.${mensajeExtra}`, 'success');
                 e.target.reset();
                 $('#btnMostrarPagos').click();
+                updateStats();
+            });
+
+            // EDICION PAGOS
+            window.abrirEditarPago = function (id) {
+                const pago = storage.getPago(id);
+                if (!pago) { showAlert('Pago no encontrado', 'danger'); return; }
+                $('#edit_pago_id').val(pago.id);
+                $('#edit_pago_usuario_id').val(pago.usuario_id);
+                $('#edit_pago_fecha').val(pago.fecha);
+                $('#edit_pago_monto').val(pago.monto);
+                $('#edit_pago_tipo').val(pago.tipo);
+                new bootstrap.Modal(document.getElementById('modalEditarPago')).show();
+            };
+
+            window.eliminarPago = function (id) {
+                if (!confirm('¿Seguro que deseas eliminar este pago?')) return;
+                storage.deletePago(id);
+                showAlert('Pago eliminado correctamente');
+                $('#btnMostrarPagos').click();
+                updateStats();
+            };
+
+            $(document).off('submit', '#formEditarPago').on('submit', '#formEditarPago', function (e) {
+                e.preventDefault();
+                const id = parseInt($('#edit_pago_id').val(), 10);
+                const data = {
+                    usuario_id: parseInt($('#edit_pago_usuario_id').val()),
+                    fecha: $('#edit_pago_fecha').val(),
+                    monto: parseFloat($('#edit_pago_monto').val()),
+                    tipo: $('#edit_pago_tipo').val()
+                };
+                storage.updatePago(id, data);
+                showAlert('Pago actualizado correctamente');
+                $('#btnMostrarPagos').click();
+                bootstrap.Modal.getInstance(document.getElementById('modalEditarPago')).hide();
                 updateStats();
             });
 
@@ -1521,19 +1674,24 @@
             // INSCRIPCIONES
             $('#formClasesUsuario').submit(e => {
                 e.preventDefault();
-                const usuario_id = parseInt(document.getElementById('usuario_clase').value, 10);
-                if (isNaN(usuario_id)) {
-                    showAlert('Ingresa un ID válido', 'warning');
-                    return;
-                }
-                const clase_id = parseInt(document.getElementById('nombre_clase_usuario').value);
+                const inputVal = document.getElementById('usuario_clase').value.trim();
 
-                // Verificar que el usuario existe
-                const usuario = storage.getUsuario(usuario_id);
+                // 1. Buscar por ID
+                let usuario = storage.getUsuario(inputVal);
+
+                // 2. Buscar por DNI
                 if (!usuario) {
-                    showAlert('Usuario no encontrado', 'danger');
+                    const usuarios = storage.getUsuarios();
+                    usuario = usuarios.find(u => u.dni && String(u.dni) === inputVal);
+                }
+
+                if (!usuario) {
+                    showAlert('Usuario no encontrado (verifica DNI o ID)', 'danger');
                     return;
                 }
+
+                const usuario_id = usuario.id; // ID resuelto
+                const clase_id = parseInt(document.getElementById('nombre_clase_usuario').value);
 
                 // Obtener clase por ID
                 const clase = storage.getClases().find(c => c.id === clase_id);
@@ -1566,22 +1724,24 @@
 
             // MOSTRAR CLASES DE USUARIO
             $('#btnMostrarClasesUsuario').click(() => {
-                const usuario_id_raw = document.getElementById('usuario_clase').value;
-                if (!usuario_id_raw) {
-                    showAlert('Ingresa el ID del usuario', 'warning');
-                    return;
-                }
-                const usuario_id = parseInt(usuario_id_raw, 10);
-                if (isNaN(usuario_id)) {
-                    showAlert('Ingresa un ID válido', 'warning');
+                const inputVal = document.getElementById('usuario_clase').value.trim();
+                if (!inputVal) {
+                    showAlert('Ingresa el ID o DNI del usuario', 'warning');
                     return;
                 }
 
-                const usuario = storage.getUsuario(usuario_id);
+                let usuario = storage.getUsuario(inputVal);
                 if (!usuario) {
-                    showAlert('Usuario no encontrado', 'danger');
+                    const usuarios = storage.getUsuarios();
+                    usuario = usuarios.find(u => u.dni && String(u.dni) === inputVal);
+                }
+
+                if (!usuario) {
+                    showAlert('Usuario no encontrado (verifica DNI o ID)', 'danger');
                     return;
                 }
+
+                const usuario_id = usuario.id;
 
                 const clasesUsuario = storage.getClasesUsuario(usuario_id);
                 const container = document.getElementById('listaClasesUsuario');
@@ -1593,7 +1753,10 @@
                         <strong>${c.nombre}</strong><br>
                         <small class="text-muted">${c.descripcion} - ${c.horario}</small>
                     </div>
-                    <span class="badge bg-primary rounded-pill">Activo</span>
+                    <div>
+                        <span class="badge bg-primary rounded-pill me-2">Activo</span>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarInscripcion(${usuario_id}, ${c.id})"><i class="fas fa-trash"></i></button>
+                    </div>
                 </li>`
                     ).join('');
                 } else {
@@ -1836,6 +1999,14 @@
             new bootstrap.Modal(document.getElementById('historialIngresosModal')).show();
         });
 
+        window.eliminarInscripcion = function (uid, cid) {
+            if (!confirm('¿Seguro que deseas eliminar esta inscripción?')) return;
+            storage.deleteInscripcionByUserAndClass(uid, cid);
+            showAlert('Inscripción eliminada correctamente');
+            $('#btnMostrarClasesUsuario').click();
+            updateStats();
+        }
+
         // =====================================================
         // PROTECCIÓN INGRESOS MES
         // =====================================================
@@ -1962,6 +2133,47 @@
     </script>
 
 
+    <!-- Modal Editar Pago -->
+    <div class="modal fade" id="modalEditarPago" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formEditarPago">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit_pago_id">
+                        <div class="mb-3">
+                            <label class="form-label">ID del Miembro</label>
+                            <input type="number" id="edit_pago_usuario_id" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" id="edit_pago_fecha" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Monto</label>
+                            <input type="number" step="0.01" id="edit_pago_monto" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Pago</label>
+                            <select id="edit_pago_tipo" class="form-control" required>
+                                <option value="Mensualidad">Mensualidad</option>
+                                <option value="Inscripción">Inscripción</option>
+                                <option value="Personal Training">Personal Training</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary-custom btn-custom">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Soporte -->
     <div class="modal fade" id="modalSupport" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -2007,6 +2219,7 @@
             </div>
         </div>
     </div>
+    <datalist id="membersList"></datalist>
 </body>
 
 </html>
