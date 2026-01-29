@@ -698,6 +698,7 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Miembro ID</th>
+                                <th>Nombre</th>
                                 <th>Fecha</th>
                                 <th>Monto</th>
                                 <th>Tipo</th>
@@ -1515,16 +1516,22 @@
             // PAGOS
             $('#btnMostrarPagos').click(() => {
                 const data = storage.getPagos();
+                const usuarios = storage.getUsuarios();
                 tablaPagos.clear();
-                tablaPagos.rows.add(data.map(p => [
-                    p.id,
-                    p.usuario_id,
-                    p.fecha,
-                    `$${p.monto}`,
-                    p.tipo,
-                    `<button class="btn btn-sm btn-outline-primary me-1" onclick="abrirEditarPago(${p.id})"><i class="fas fa-edit"></i></button>
-                     <button class="btn btn-sm btn-outline-danger" onclick="eliminarPago(${p.id})"><i class="fas fa-trash"></i></button>`
-                ]));
+                tablaPagos.rows.add(data.map(p => {
+                    const usuario = usuarios.find(u => u.id === p.usuario_id);
+                    const nombreCompleto = usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Usuario no encontrado';
+                    return [
+                        p.id,
+                        p.usuario_id,
+                        nombreCompleto,
+                        p.fecha,
+                        `$${p.monto}`,
+                        p.tipo,
+                        `<button class="btn btn-sm btn-outline-primary me-1" onclick="abrirEditarPago(${p.id})"><i class="fas fa-edit"></i></button>
+                         <button class="btn btn-sm btn-outline-danger" onclick="eliminarPago(${p.id})"><i class="fas fa-trash"></i></button>`
+                    ];
+                }));
                 tablaPagos.draw();
                 showContainer('tablaPagosContainer');
             });
