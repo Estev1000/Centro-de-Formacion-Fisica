@@ -6,6 +6,10 @@ function getUsuarios() {
     return JSON.parse(localStorage.getItem('gym_usuarios') || '[]');
 }
 
+function getPagos() {
+    return JSON.parse(localStorage.getItem('gym_pagos') || '[]');
+}
+
 function getIngresos() {
     return JSON.parse(localStorage.getItem('gym_ingresos') || '[]');
 }
@@ -64,6 +68,14 @@ function submitLogin() {
         const user = usuarios.find(u => u.dni && u.dni.toString().trim() === dni);
 
         if (user) {
+            const pagos = getPagos();
+            const tienePagoPendiente = pagos.some(p =>
+                p &&
+                String(p.usuario_id) === String(user.id) &&
+                String(p.estado || '').trim() === 'Pendiente (Saldo / Fiado)'
+            );
+            const avisoPendiente = tienePagoPendiente ? ' PENDIENTE' : '';
+
             // Check if membership is expired
             const fechaVencimiento = new Date(user.fecha_vencimiento);
             const hoy = new Date();
@@ -73,7 +85,7 @@ function submitLogin() {
 
             if (fechaVencimiento < hoy) {
                 // EXPIRED
-                showMessage(`Hola ${user.nombre}, tu cuota Venció el ${user.fecha_vencimiento}`, 'error');
+                showMessage(`Hola ${user.nombre}, tu cuota Venció el ${user.fecha_vencimiento}.${avisoPendiente}`, 'error');
                 playSound('error');
 
                 startBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Vencido';
@@ -89,7 +101,7 @@ function submitLogin() {
                 ingresos.push(newIngreso);
                 saveIngresos(ingresos);
 
-                showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido.`, 'success');
+                showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido.${avisoPendiente}`, tienePagoPendiente ? 'error' : 'success');
                 playSound('success');
 
                 startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Adelante';

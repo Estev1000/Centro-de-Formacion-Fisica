@@ -83,7 +83,7 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             margin: 20px;
             padding: 0;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .navbar-custom {
@@ -320,6 +320,7 @@
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            font-size: 0.9rem;
         }
 
         .table-custom thead {
@@ -331,20 +332,76 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            font-size: 0.85rem;
-            padding: 1rem;
+            font-size: 0.75rem;
+            padding: 0.75rem 0.5rem;
             border: none;
+            white-space: nowrap;
         }
 
         .table-custom td {
-            padding: 1rem;
+            padding: 0.75rem 0.5rem;
             vertical-align: middle;
             border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
         }
 
         .table-custom tbody tr:hover {
             background: #f8fafc;
         }
+
+        /* Contenedor scrollable para tablas en pantallas pequeñas */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Ajustes para pantallas muy pequeñas */
+        @media (max-width: 768px) {
+            .table-custom {
+                font-size: 0.75rem;
+            }
+
+            .table-custom th {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.3rem;
+            }
+
+            .table-custom td {
+                padding: 0.5rem 0.3rem;
+                font-size: 0.75rem;
+            }
+
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.65rem;
+            }
+
+            .table-custom i {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .table-custom {
+                font-size: 0.7rem;
+            }
+
+            .table-custom th {
+                font-size: 0.6rem;
+                padding: 0.4rem 0.2rem;
+            }
+
+            .table-custom td {
+                padding: 0.4rem 0.2rem;
+                font-size: 0.7rem;
+            }
+
+            .btn-sm {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.6rem;
+            }
+        }
+
 
         .section-title {
             font-size: 1.5rem;
@@ -708,6 +765,19 @@
                                 <option value="Otros">Otros</option>
                             </select>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estado</label>
+                            <select id="estado_pago" name="estado" class="form-control" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Pagado (Completo)">Pagado (Completo)</option>
+                                <option value="Pendiente (Saldo / Fiado)">Pendiente (Saldo / Fiado)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Observaciones</label>
+                            <textarea id="observaciones_pago" name="observaciones" class="form-control" rows="2"
+                                placeholder="Ej: Restan $5000"></textarea>
+                        </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary-custom btn-custom me-2">
                                 <i class="fas fa-plus me-2"></i>Registrar Pago
@@ -721,59 +791,23 @@
 
                 <div id="tablaPagosContainer" class="d-none">
                     <h5 class="mb-3"><i class="fas fa-history me-2"></i>Historial de Pagos</h5>
-                    <table id="tablaPagos" class="table table-custom">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Miembro ID</th>
-                                <th>Nombre</th>
-                                <th>Fecha</th>
-                                <th>Monto</th>
-                                <th>Tipo</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Modal para Editar Pago -->
-            <div class="modal fade" id="editarPagoModal" tabindex="-1" aria-labelledby="editarPagoModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="editarPagoModalLabel">Editar Pago</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="formEditarPago">
-                                <input type="hidden" id="edit_pago_id">
-                                <div class="mb-3">
-                                    <label for="edit_usuario_pago" class="form-label">ID del Miembro</label>
-                                    <input type="text" class="form-control" id="edit_usuario_pago" readonly>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="edit_fecha_pago" class="form-label">Fecha</label>
-                                    <input type="date" class="form-control" id="edit_fecha_pago" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="edit_monto_pago" class="form-label">Monto</label>
-                                    <input type="number" step="0.01" class="form-control" id="edit_monto_pago" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="edit_tipo_pago" class="form-label">Tipo de Pago</label>
-                                    <select class="form-control" id="edit_tipo_pago" required>
-                                        <option value="Mensualidad">Mensualidad</option>
-                                        <option value="Inscripción">Inscripción</option>
-                                        <option value="Personal Training">Personal Training</option>
-                                        <option value="Otros">Otros</option>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-primary-custom">Guardar Cambios</button>
-                            </form>
-                        </div>
+                    <div class="table-responsive">
+                        <table id="tablaPagos" class="table table-custom">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Miembro ID</th>
+                                    <th>Nombre</th>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Observaciones</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -880,18 +914,20 @@
 
                 <div id="tablaClasesContainer" class="d-none">
                     <h5 class="mb-3"><i class="fas fa-dumbbell me-2"></i>Actividades Disponibles</h5>
-                    <table id="tablaClases" class="table table-custom w-100">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Horario</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table id="tablaClases" class="table table-custom w-100">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Horario</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -1564,6 +1600,8 @@
                         p.fecha,
                         `$${p.monto}`,
                         p.tipo,
+                        p.estado || 'N/A',
+                        p.observaciones || '',
                         `<button class="btn btn-sm btn-outline-primary me-1" onclick="abrirEditarPago(${p.id})"><i class="fas fa-edit"></i></button>
                          <button class="btn btn-sm btn-outline-danger" onclick="eliminarPago(${p.id})"><i class="fas fa-trash"></i></button>`
                     ];
@@ -1655,11 +1693,13 @@
                 const pago = storage.getPago(id);
                 if (!pago) { showAlert('Pago no encontrado', 'danger'); return; }
                 $('#edit_pago_id').val(pago.id);
-                $('#edit_pago_usuario_id').val(pago.usuario_id);
-                $('#edit_pago_fecha').val(pago.fecha);
-                $('#edit_pago_monto').val(pago.monto);
-                $('#edit_pago_tipo').val(pago.tipo);
-                new bootstrap.Modal(document.getElementById('modalEditarPago')).show();
+                $('#edit_usuario_pago').val(pago.usuario_id);
+                $('#edit_fecha_pago').val(pago.fecha);
+                $('#edit_monto_pago').val(pago.monto);
+                $('#edit_tipo_pago').val(pago.tipo);
+                $('#edit_estado_pago').val(pago.estado || '');
+                $('#edit_observaciones_pago').val(pago.observaciones || '');
+                new bootstrap.Modal(document.getElementById('editarPagoModal')).show();
             };
 
             window.eliminarPago = function (id) {
@@ -1674,15 +1714,17 @@
                 e.preventDefault();
                 const id = parseInt($('#edit_pago_id').val(), 10);
                 const data = {
-                    usuario_id: parseInt($('#edit_pago_usuario_id').val()),
-                    fecha: $('#edit_pago_fecha').val(),
-                    monto: parseFloat($('#edit_pago_monto').val()),
-                    tipo: $('#edit_pago_tipo').val()
+                    usuario_id: parseInt($('#edit_usuario_pago').val()),
+                    fecha: $('#edit_fecha_pago').val(),
+                    monto: parseFloat($('#edit_monto_pago').val()),
+                    tipo: $('#edit_tipo_pago').val(),
+                    estado: $('#edit_estado_pago').val(),
+                    observaciones: $('#edit_observaciones_pago').val()
                 };
                 storage.updatePago(id, data);
                 showAlert('Pago actualizado correctamente');
                 $('#btnMostrarPagos').click();
-                bootstrap.Modal.getInstance(document.getElementById('modalEditarPago')).hide();
+                bootstrap.Modal.getInstance(document.getElementById('editarPagoModal')).hide();
                 updateStats();
             });
 
@@ -1705,8 +1747,8 @@
                     const container = document.getElementById('infoUsuario');
                     const clasesUsuario = storage.getClasesUsuario(id);
                     const clasesHtml = clasesUsuario.length > 0
-                        ? `<div class="mt-3"><h6>Clases inscritas:</h6><ul>${clasesUsuario.map(c => `<li>${c.nombre} - ${c.horario}</li>`).join('')}</ul></div>`
-                        : '<div class="mt-3"><p class="text-muted">No está inscrito en ninguna clase</p></div>';
+                        ? `<div class="mt-3"><h6>Actividades inscritas:</h6><ul>${clasesUsuario.map(c => `<li>${c.nombre} - ${c.horario}</li>`).join('')}</ul></div>`
+                        : '<div class="mt-3"><p class="text-muted">No está inscrito en ninguna actividad</p></div>';
 
                     // Verificar estado de vencimiento
                     const vencida = estaVencida(user.fecha_vencimiento);
@@ -1757,7 +1799,7 @@
                     c.nombre,
                     c.descripcion,
                     c.horario,
-                    `<button class="btn btn-sm btn-warning" onclick="abrirEditarClase(${c.id})"><i class="fas fa-edit"></i> Editar</button>
+                    `<button class="btn btn-sm btn-warning" onclick="abrirEditarClase(${c.id})"><i class="fas fa-edit"></i> Editar Actividad</button>
              <button class="btn btn-sm btn-danger" onclick="eliminarClase(${c.id})"><i class="fas fa-trash"></i> Eliminar</button>`
                 ]));
                 tablaClases.draw();
@@ -1770,7 +1812,7 @@
                 const body = Object.fromEntries(formData);
 
                 storage.addClase(body);
-                showAlert('Clase agregada correctamente');
+                showAlert('Actividad agregada correctamente');
                 e.target.reset();
                 populateClaseOptions();
                 $('#btnMostrarClases').click();
@@ -1824,7 +1866,7 @@
                 const clase = storage.getClases().find(c => c.id === clase_id);
 
                 if (!clase) {
-                    showAlert('Clase no encontrada', 'danger');
+                    showAlert('Actividad no encontrada', 'danger');
                     return;
                 }
 
@@ -1833,7 +1875,7 @@
                 const yaInscrito = inscripciones.find(i => i.usuario_id === usuario_id && i.clase_id === clase_id);
 
                 if (yaInscrito) {
-                    showAlert('El usuario ya está inscrito en esta clase', 'warning');
+                    showAlert('El usuario ya está inscrito en esta actividad', 'warning');
                     return;
                 }
 
@@ -1887,7 +1929,7 @@
                 </li>`
                     ).join('');
                 } else {
-                    container.innerHTML = '<li class="list-group-item text-muted">No está inscrito en ninguna clase</li>';
+                    container.innerHTML = '<li class="list-group-item text-muted">No está inscrito en ninguna actividad</li>';
                 }
 
                 showContainer('listaClasesUsuarioContainer');
@@ -1940,9 +1982,9 @@
         }
 
         window.eliminarClase = function (id) {
-            if (!confirm('¿Seguro que deseas eliminar esta clase?')) return;
+            if (!confirm('¿Seguro que deseas eliminar esta actividad?')) return;
             storage.deleteClase(id);
-            showAlert('Clase eliminada correctamente');
+            showAlert('Actividad eliminada correctamente');
             $('#btnMostrarClases').click();
             updateStats();
         }
@@ -2008,7 +2050,7 @@
         // ======= EDICIÓN DE CLASES =======
         window.abrirEditarClase = function (id) {
             const clase = storage.getClase(id);
-            if (!clase) { showAlert('Clase no encontrada', 'danger'); return; }
+            if (!clase) { showAlert('Actividad no encontrada', 'danger'); return; }
             // Rellenar campos del modal
             $('#editar_id_clase').val(clase.id);
             $('#editar_nombre_clase').val(clase.nombre);
@@ -2026,7 +2068,7 @@
                 horario: $('#editar_horario_clase').val()
             };
             storage.updateClase(id, data);
-            showAlert('Clase actualizada correctamente');
+            showAlert('Actividad actualizada correctamente');
 
             const tablaClases = $("#tablaClases").DataTable();
             tablaClases.clear();
@@ -2035,7 +2077,7 @@
                 c.nombre,
                 c.descripcion,
                 c.horario,
-                `<button class="btn btn-sm btn-warning" onclick="abrirEditarClase(${c.id})"><i class="fas fa-edit"></i> Editar</button>
+                `<button class="btn btn-sm btn-warning" onclick="abrirEditarClase(${c.id})"><i class="fas fa-edit"></i> Editar Actividad</button>
          <button class="btn btn-sm btn-danger" onclick="eliminarClase(${c.id})"><i class="fas fa-trash"></i> Eliminar</button>`
             ]));
             tablaClases.draw();
@@ -2313,7 +2355,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Clase</h5>
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Actividad</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="formEditarClase">
@@ -2349,16 +2391,18 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <table id="tablaIngresos" class="table table-custom w-100">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Miembro ID</th>
-                                <th>Fecha/Hora</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table id="tablaIngresos" class="table table-custom w-100">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Miembro ID</th>
+                                    <th>Fecha/Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2369,46 +2413,58 @@
     </script>
 
 
-    <!-- Modal Editar Pago -->
-    <div class="modal fade" id="modalEditarPago" tabindex="-1" aria-hidden="true">
+    <!-- Modal para Editar Pago -->
+    <div class="modal fade" id="editarPagoModal" tabindex="-1" aria-labelledby="editarPagoModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Pago</h5>
+                    <h5 class="modal-title" id="editarPagoModalLabel">Editar Pago</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="formEditarPago">
-                    <div class="modal-body">
+                <div class="modal-body">
+                    <form id="formEditarPago">
                         <input type="hidden" id="edit_pago_id">
                         <div class="mb-3">
-                            <label class="form-label">ID del Miembro</label>
-                            <input type="number" id="edit_pago_usuario_id" class="form-control" required>
+                            <label for="edit_usuario_pago" class="form-label">ID del Miembro</label>
+                            <input type="text" class="form-control" id="edit_usuario_pago" readonly>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" id="edit_pago_fecha" class="form-control" required>
+                            <label for="edit_fecha_pago" class="form-label">Fecha</label>
+                            <input type="date" class="form-control" id="edit_fecha_pago" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Monto</label>
-                            <input type="number" step="0.01" id="edit_pago_monto" class="form-control" required>
+                            <label for="edit_monto_pago" class="form-label">Monto</label>
+                            <input type="number" step="0.01" class="form-control" id="edit_monto_pago" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Tipo de Pago</label>
-                            <select id="edit_pago_tipo" class="form-control" required>
+                            <label for="edit_tipo_pago" class="form-label">Tipo de Pago</label>
+                            <select class="form-control" id="edit_tipo_pago" required>
                                 <option value="Mensualidad">Mensualidad</option>
                                 <option value="Inscripción">Inscripción</option>
                                 <option value="Personal Training">Personal Training</option>
                                 <option value="Otros">Otros</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary-custom btn-custom">Guardar Cambios</button>
-                    </div>
-                </form>
+                        <div class="mb-3">
+                            <label for="edit_estado_pago" class="form-label">Estado</label>
+                            <select class="form-control" id="edit_estado_pago" required>
+                                <option value="Pagado (Completo)">Pagado (Completo)</option>
+                                <option value="Pendiente (Saldo / Fiado)">Pendiente (Saldo / Fiado)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_observaciones_pago" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="edit_observaciones_pago" rows="2"
+                                placeholder="Ej: Restan $5000"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom">Guardar Cambios</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+
 
     <!-- Modal Soporte -->
     <div class="modal fade" id="modalSupport" tabindex="-1" aria-hidden="true">
