@@ -33,6 +33,44 @@
         }
 
         body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Styles for Autocomplete Suggestions */
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .suggestions-list li {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .suggestions-list li:hover {
+            background-color: #f0f4f8;
+            color: #667eea;
+        }
+
+        .suggestions-list li:last-child {
+            border-bottom: none;
+        }
+
+        body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             margin: 0;
@@ -618,10 +656,11 @@
                 <div class="form-card mb-4">
                     <h5 class="mb-3"><i class="fas fa-credit-card me-2"></i>Registrar Nuevo Pago</h5>
                     <form id="formRegistrarPago" class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">ID o DNI del Miembro</label>
-                            <input id="usuario_pago" name="usuario_id" type="text" list="membersList"
-                                class="form-control" required placeholder="Ej: 1 o 12345678">
+                        <div class="col-md-6 position-relative">
+                            <label class="form-label">ID, DNI, Nombre o Apellido</label>
+                            <input id="usuario_pago" name="usuario_id" type="text" class="form-control"
+                                autocomplete="off" required placeholder="Ej: 1, 12345678 o Juan">
+                            <ul id="listaSugerenciasPagos" class="suggestions-list d-none"></ul>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Fecha</label>
@@ -1494,15 +1533,35 @@
                 const formData = new FormData(e.target);
                 const body = Object.fromEntries(formData);
                 body.monto = parseFloat(body.monto);
-                const inputVal = body.usuario_id.toString().trim();
 
-                // 1. Buscar por ID primero
-                let usuario = storage.getUsuario(inputVal);
+                const inputVal = $('#usuario_pago').val().trim();
+                const selectedId = $('#usuario_pago').data('selected-id');
+                let usuario = null;
 
-                // 2. Si no existe por ID, buscar por DNI
+                // 1. Usar ID seleccionado de la lista (si existe)
+                if (selectedId) {
+                    usuario = storage.getUsuario(selectedId);
+                }
+
+                // 2. Si no, buscar por ID directo
+                if (!usuario) {
+                    usuario = storage.getUsuario(inputVal);
+                }
+
+                // 3. Buscar por DNI
                 if (!usuario) {
                     const usuarios = storage.getUsuarios();
                     usuario = usuarios.find(u => u.dni && String(u.dni) === inputVal);
+                }
+
+                // 4. Buscar por Nombre/Apellido (fallback)
+                if (!usuario) {
+                    const busqueda = inputVal.toLowerCase();
+                    const usuarios = storage.getUsuarios();
+                    usuario = usuarios.find(u =>
+                        (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                        (u.apellido && u.apellido.toLowerCase().includes(busqueda))
+                    );
                 }
 
                 if (!usuario) {
@@ -2026,6 +2085,53 @@
         window.openSupportModal = function () {
             new bootstrap.Modal(document.getElementById('modalSupport')).show();
         };
+        // =====================================================
+        // AUTOCOMPLETADO PAGOS (Nuevo)
+        // =====================================================
+        $(document).on('input', '#usuario_pago', function () {
+            const busqueda = $(this).val().toLowerCase().trim();
+            const suggestionsList = $('#listaSugerenciasPagos');
+
+            // Limpiar ID si edita
+            $(this).removeData('selected-id');
+
+            suggestionsList.empty().addClass('d-none');
+
+            // Necesitamos al menos 2 caracteres o ser un número
+            if (busqueda.length < 2 && isNaN(busqueda)) return;
+
+            const usuarios = storage.getUsuarios();
+            const sugerencias = usuarios.filter(u =>
+                (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                (u.apellido && u.apellido.toLowerCase().includes(busqueda)) ||
+                (u.dni && String(u.dni).includes(busqueda)) ||
+                (String(u.id).includes(busqueda))
+            );
+
+            if (sugerencias.length > 0) {
+                sugerencias.slice(0, 10).forEach(u => {
+                    const li = $(`<li>
+                        <strong>${u.nombre} ${u.apellido}</strong><br>
+                        <small class="text-muted">DNI: ${u.dni || 'N/A'} - ID: ${u.id}</small>
+                    </li>`);
+
+                    li.on('click', function () {
+                        $('#usuario_pago').val(`${u.nombre} ${u.apellido}`);
+                        $('#usuario_pago').data('selected-id', u.id);
+                        suggestionsList.addClass('d-none');
+                    });
+
+                    suggestionsList.append(li);
+                });
+                suggestionsList.removeClass('d-none');
+            }
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#usuario_pago').length && !$(e.target).closest('#listaSugerenciasPagos').length) {
+                $('#listaSugerenciasPagos').addClass('d-none');
+            }
+        });
     </script>
 
     <!-- Modal Editar Miembro -->
