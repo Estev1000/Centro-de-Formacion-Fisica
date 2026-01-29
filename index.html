@@ -510,7 +510,7 @@
                             <i class="fas fa-dumbbell"></i>
                         </div>
                         <div class="stat-number" id="totalClases">0</div>
-                        <div class="stat-label">Clases Disponibles</div>
+                        <div class="stat-label">Actividades Disponibles</div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -554,7 +554,7 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="clases-tab" data-bs-toggle="tab" data-bs-target="#clases" type="button"
                     role="tab">
-                    <i class="fas fa-dumbbell me-2"></i>Clases
+                    <i class="fas fa-dumbbell me-2"></i>Actividades
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -783,7 +783,7 @@
 
             <!-- Inscripciones -->
             <div class="tab-pane fade" id="clases-usuario" role="tabpanel">
-                <div class="section-title">Inscripciones a Clases</div>
+                <div class="section-title">Inscripciones a Actividades</div>
 
                 <div class="form-card mb-4">
                     <h5 class="mb-3"><i class="fas fa-user-plus me-2"></i>Inscribir Miembro</h5>
@@ -795,7 +795,7 @@
                             <ul id="listaSugerenciasClases" class="suggestions-list d-none"></ul>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Clase</label>
+                            <label class="form-label">Actividad</label>
                             <select id="nombre_clase_usuario" class="form-control" required></select>
                         </div>
                         <div class="col-12">
@@ -804,27 +804,27 @@
                             </button>
                             <button type="button" id="btnMostrarClasesUsuario"
                                 class="btn btn-outline-custom btn-custom">
-                                <i class="fas fa-list me-2"></i>Ver Clases del Miembro
+                                <i class="fas fa-list me-2"></i>Ver Actividades del Miembro
                             </button>
                         </div>
                     </form>
                 </div>
 
                 <div id="listaClasesUsuarioContainer" class="d-none">
-                    <h5 class="mb-3"><i class="fas fa-dumbbell me-2"></i>Clases del Miembro</h5>
+                    <h5 class="mb-3"><i class="fas fa-dumbbell me-2"></i>Actividades del Miembro</h5>
                     <ul id="listaClasesUsuario" class="list-group"></ul>
                 </div>
             </div>
 
-            <!-- Clases -->
+            <!-- Actividades -->
             <div class="tab-pane fade" id="clases" role="tabpanel">
-                <div class="section-title">Gestión de Clases</div>
+                <div class="section-title">Gestión de Actividades</div>
 
                 <div class="form-card mb-4">
-                    <h5 class="mb-3"><i class="fas fa-plus-circle me-2"></i>Crear Nueva Clase</h5>
+                    <h5 class="mb-3"><i class="fas fa-plus-circle me-2"></i>Crear Nueva Actividad</h5>
                     <form id="formRegistrarClase" class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre de la Clase</label>
+                            <label class="form-label">Nombre de la Actividad</label>
                             <input id="nombre_clase" name="nombre" class="form-control" required
                                 placeholder="Ej: Yoga, Crossfit...">
                         </div>
@@ -840,10 +840,10 @@
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary-custom btn-custom me-2">
-                                <i class="fas fa-save me-2"></i>Crear Clase
+                                <i class="fas fa-save me-2"></i>Crear Actividad
                             </button>
                             <button type="button" id="btnMostrarClases" class="btn btn-outline-custom btn-custom">
-                                <i class="fas fa-list me-2"></i>Ver Todas las Clases
+                                <i class="fas fa-list me-2"></i>Ver Todas las Actividades
                             </button>
                         </div>
                     </form>
@@ -879,7 +879,8 @@
                             <a href="#m-miembros" class="list-group-item list-group-item-action">Miembros</a>
                             <a href="#m-pagos" class="list-group-item list-group-item-action">Pagos y Renovaciones</a>
                             <a href="#m-ingresos" class="list-group-item list-group-item-action">Control de Acceso</a>
-                            <a href="#m-clases" class="list-group-item list-group-item-action">Gestión de Clases</a>
+                            <a href="#m-clases" class="list-group-item list-group-item-action">Gestión de
+                                Actividades</a>
                             <a href="#m-backup" class="list-group-item list-group-item-action">Copias de Seguridad</a>
                         </div>
                     </div>
@@ -908,7 +909,7 @@
                                     diseñada para la eficiencia.</p>
                                 <ul>
                                     <li><strong>Navegación:</strong> Usa las pestañas superiores (Miembros, Pagos,
-                                        Buscar, Clases) para moverte por las distintas secciones.</li>
+                                        Buscar, Actividades) para moverte por las distintas secciones.</li>
                                     <li><strong>Acceso Rápido:</strong> En la barra superior tienes botones para
                                         <strong>"Modo Acceso"</strong> (para que los socios pongan su DNI) e
                                         <strong>"Ingresos"</strong> (para ver quién entra).
@@ -990,11 +991,11 @@
 
                             <div class="manual-section mb-5" id="m-clases">
                                 <h4 class="text-primary border-bottom pb-2"><i class="fas fa-dumbbell me-2"></i>6.
-                                    Gestión de Clases</h4>
+                                    Gestión de Actividades</h4>
                                 <p>Organiza tus actividades grupales:</p>
                                 <ul>
                                     <li>Crea actividades con nombre, descripción y horario.</li>
-                                    <li>Inscribe socios asociando su ID a una clase específica.</li>
+                                    <li>Inscribe socios asociando su ID a una actividad específica.</li>
                                     <li>Controla el aforo y asistencia fácilmente.</li>
                                 </ul>
                             </div>
