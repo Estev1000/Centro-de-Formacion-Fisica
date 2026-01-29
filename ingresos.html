@@ -34,6 +34,39 @@
         .btn-primary-custom:hover {
             transform: translateY(-2px);
         }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .suggestions-list li {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .suggestions-list li:hover {
+            background-color: #f0f4f8;
+            color: #667eea;
+        }
+
+        .suggestions-list li:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 
@@ -48,9 +81,11 @@
         <div class="card p-4 mb-4">
             <h5 class="mb-3"><i class="fas fa-search me-2"></i>Búsqueda de Miembros</h5>
             <form id="formBuscar" class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label">ID o DNI del Miembro</label>
-                    <input type="text" id="inputBusquedaPrincipal" class="form-control" placeholder="Ej: 1 o 12345678">
+                <div class="col-md-4 position-relative">
+                    <label class="form-label">ID, DNI, Nombre o Apellido</label>
+                    <input type="text" id="inputBusquedaPrincipal" class="form-control"
+                        placeholder="Ej: 1, 12345678 o Juan" autocomplete="off">
+                    <ul id="listaSugerencias" class="suggestions-list d-none"></ul>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Teléfono</label>
@@ -104,6 +139,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Miembro ID</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
                         <th>Fecha/Hora</th>
                         <th>Acción</th> <!-- Nueva columna -->
                     </tr>
@@ -189,13 +226,20 @@
         // DataTable
         const dt = $('#tablaIngresos').DataTable({ language: { search: 'Buscar:', lengthMenu: 'Mostrar _MENU_', info: '_START_ - _END_ de _TOTAL_', paginate: { first: 'Primero', last: 'Último', next: 'Siguiente', previous: 'Anterior' }, emptyTable: 'Sin registros' }, order: [[0, 'desc']] });
         function refrescarTabla() {
-            const data = storage.getIngresos().map(i => [
-                i.id,
-                i.usuario_id,
-                new Date(i.fecha).toLocaleString('es-ES'),
-                `<button class='btn btn-sm btn-warning me-2' onclick='editarIngreso(${i.id})'>Editar</button>
-         <button class='btn btn-sm btn-danger' onclick='eliminarIngreso(${i.id})'>Eliminar</button>`
-            ]).sort((a, b) => b[0] - a[0]);
+            const data = storage.getIngresos().map(i => {
+                const usuario = storage.getUsuario(i.usuario_id);
+                const nombre = usuario ? usuario.nombre : 'Desconocido';
+                const apellido = usuario ? usuario.apellido : '';
+                return [
+                    i.id,
+                    i.usuario_id,
+                    nombre,
+                    apellido,
+                    new Date(i.fecha).toLocaleString('es-ES'),
+                    `<button class='btn btn-sm btn-warning me-2' onclick='editarIngreso(${i.id})'>Editar</button>
+             <button class='btn btn-sm btn-danger' onclick='eliminarIngreso(${i.id})'>Eliminar</button>`
+                ];
+            }).sort((a, b) => b[0] - a[0]);
             dt.clear().rows.add(data).draw();
         }
         refrescarTabla();
@@ -225,11 +269,18 @@
 
             if (busqueda) {
                 // Intentar buscar por ID (si es un número exacto)
-                usuario = usuarios.find(u => u.id === parseInt(busqueda));
+                if (!isNaN(busqueda) && busqueda.trim() !== '') {
+                    usuario = usuarios.find(u => u.id === parseInt(busqueda));
+                }
 
-                // Si no se encontró por ID, intentar buscar por DNI
+                // Busqueda por DNI, Nombre o Apellido (insensitive)
                 if (!usuario) {
-                    usuario = usuarios.find(u => u.dni && String(u.dni).includes(busqueda));
+                    const busquedaLower = busqueda.toLowerCase();
+                    usuario = usuarios.find(u =>
+                        (u.dni && String(u.dni).includes(busqueda)) ||
+                        (u.nombre && u.nombre.toLowerCase().includes(busquedaLower)) ||
+                        (u.apellido && u.apellido.toLowerCase().includes(busquedaLower))
+                    );
                 }
             }
 
@@ -244,6 +295,49 @@
             } else {
                 alert('Miembro no encontrado. Intente con ID, DNI o teléfono.');
                 $('#resultadoBusqueda').addClass('d-none');
+            }
+        });
+
+        // Autocompletado en tiempo real
+        $('#inputBusquedaPrincipal').on('input', function () {
+            const busqueda = $(this).val().toLowerCase().trim();
+            const suggestionsList = $('#listaSugerencias');
+            suggestionsList.empty().addClass('d-none');
+
+            if (busqueda.length < 2) return; // Esperar al menos 2 caracteres
+
+            const usuarios = storage.getUsuarios();
+            const sugerencias = usuarios.filter(u =>
+                (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                (u.apellido && u.apellido.toLowerCase().includes(busqueda)) ||
+                (u.dni && String(u.dni).includes(busqueda))
+            );
+
+            if (sugerencias.length > 0) {
+                sugerencias.slice(0, 10).forEach(u => { // Mostrar máximo 10 sugerencias
+                    const li = $(`<li>
+                        <strong>${u.nombre} ${u.apellido}</strong><br>
+                        <small class="text-muted">DNI: ${u.dni || 'N/A'} - ID: ${u.id}</small>
+                    </li>`);
+
+                    li.on('click', function () {
+                        // Al hacer clic, seleccionamos el usuario directamente
+                        mostrarMiembro(u);
+                        $('#listaMiembrosContainer').addClass('d-none');
+                        $('#inputBusquedaPrincipal').val(`${u.nombre} ${u.apellido}`); // Poner nombre en el input
+                        suggestionsList.addClass('d-none'); // Ocultar lista
+                    });
+
+                    suggestionsList.append(li);
+                });
+                suggestionsList.removeClass('d-none');
+            }
+        });
+
+        // Ocultar sugerencias al hacer clic fuera
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#inputBusquedaPrincipal').length && !$(e.target).closest('#listaSugerencias').length) {
+                $('#listaSugerencias').addClass('d-none');
             }
         });
 
