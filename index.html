@@ -788,9 +788,10 @@
                     <h5 class="mb-3"><i class="fas fa-user-plus me-2"></i>Inscribir Miembro</h5>
                     <form id="formClasesUsuario" class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">ID o DNI del Miembro</label>
-                            <input id="usuario_clase" type="text" list="membersList" class="form-control" required
-                                placeholder="Ej: 1 o 12345678">
+                            <label class="form-label">ID, DNI, Nombre o Apellido</label>
+                            <input id="usuario_clase" type="text" class="form-control" autocomplete="off" required
+                                placeholder="Ej: 1, 12345678 o Juan">
+                            <ul id="listaSugerenciasClases" class="suggestions-list d-none"></ul>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Clase</label>
@@ -1733,15 +1734,34 @@
             // INSCRIPCIONES
             $('#formClasesUsuario').submit(e => {
                 e.preventDefault();
-                const inputVal = document.getElementById('usuario_clase').value.trim();
+                const inputVal = $('#usuario_clase').val().trim();
+                const selectedId = $('#usuario_clase').data('selected-id');
+                let usuario = null;
 
-                // 1. Buscar por ID
-                let usuario = storage.getUsuario(inputVal);
+                // 1. Usar ID seleccionado de la lista (si existe)
+                if (selectedId) {
+                    usuario = storage.getUsuario(selectedId);
+                }
 
-                // 2. Buscar por DNI
+                // 2. Buscar por ID directo
+                if (!usuario) {
+                    usuario = storage.getUsuario(inputVal);
+                }
+
+                // 3. Buscar por DNI
                 if (!usuario) {
                     const usuarios = storage.getUsuarios();
                     usuario = usuarios.find(u => u.dni && String(u.dni) === inputVal);
+                }
+
+                // 4. Buscar por Nombre/Apellido (fallback)
+                if (!usuario) {
+                    const busqueda = inputVal.toLowerCase();
+                    const usuarios = storage.getUsuarios();
+                    usuario = usuarios.find(u =>
+                        (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                        (u.apellido && u.apellido.toLowerCase().includes(busqueda))
+                    );
                 }
 
                 if (!usuario) {
@@ -2130,6 +2150,54 @@
         $(document).on('click', function (e) {
             if (!$(e.target).closest('#usuario_pago').length && !$(e.target).closest('#listaSugerenciasPagos').length) {
                 $('#listaSugerenciasPagos').addClass('d-none');
+            }
+        });
+
+        // =====================================================
+        // AUTOCOMPLETADO CLASES (Nuevo)
+        // =====================================================
+        $(document).on('input', '#usuario_clase', function () {
+            const busqueda = $(this).val().toLowerCase().trim();
+            const suggestionsList = $('#listaSugerenciasClases');
+
+            // Limpiar ID si edita
+            $(this).removeData('selected-id');
+
+            suggestionsList.empty().addClass('d-none');
+
+            // Necesitamos al menos 2 caracteres o ser un número
+            if (busqueda.length < 2 && isNaN(busqueda)) return;
+
+            const usuarios = storage.getUsuarios();
+            const sugerencias = usuarios.filter(u =>
+                (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                (u.apellido && u.apellido.toLowerCase().includes(busqueda)) ||
+                (u.dni && String(u.dni).includes(busqueda)) ||
+                (String(u.id).includes(busqueda))
+            );
+
+            if (sugerencias.length > 0) {
+                sugerencias.slice(0, 10).forEach(u => {
+                    const li = $(`<li>
+                        <strong>${u.nombre} ${u.apellido}</strong><br>
+                        <small class="text-muted">DNI: ${u.dni || 'N/A'} - ID: ${u.id}</small>
+                    </li>`);
+
+                    li.on('click', function () {
+                        $('#usuario_clase').val(`${u.nombre} ${u.apellido}`);
+                        $('#usuario_clase').data('selected-id', u.id);
+                        suggestionsList.addClass('d-none');
+                    });
+
+                    suggestionsList.append(li);
+                });
+                suggestionsList.removeClass('d-none');
+            }
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#usuario_clase').length && !$(e.target).closest('#listaSugerenciasClases').length) {
+                $('#listaSugerenciasClases').addClass('d-none');
             }
         });
     </script>
