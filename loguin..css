@@ -280,6 +280,11 @@ p {
     text-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
 }
 
+.message.warning {
+    color: #ffd32a;
+    text-shadow: 0 0 10px rgba(255, 211, 42, 0.3);
+}
+
 .hidden {
     opacity: 0;
 }

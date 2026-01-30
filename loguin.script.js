@@ -101,7 +101,7 @@ function submitLogin() {
                 ingresos.push(newIngreso);
                 saveIngresos(ingresos);
 
-                showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido.${avisoPendiente}`, tienePagoPendiente ? 'error' : 'success');
+                showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido.${avisoPendiente}`, tienePagoPendiente ? 'warning' : 'success');
                 playSound('success');
 
                 startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Adelante';
