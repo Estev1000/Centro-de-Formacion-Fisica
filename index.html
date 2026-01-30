@@ -1780,38 +1780,71 @@
                 $('#btnMostrarPagos').click();
                 bootstrap.Modal.getInstance(document.getElementById('editarPagoModal')).hide();
                 updateStats();
+
+                if (window.__lastBuscarUserId && parseInt(window.__lastBuscarUserId) === parseInt(data.usuario_id)) {
+                    renderBuscarUsuario(parseInt(data.usuario_id));
+                }
             });
 
-            // BUSCAR USUARIO
-            $('#formBuscarUsuario').submit(e => {
-                e.preventDefault();
-                const busqueda = document.getElementById('usuario_id_buscar').value.trim().toLowerCase();
-                const usuarios = storage.getUsuarios();
+            function getUltimoPagoMensualidadUsuario(usuarioId) {
+                const pagos = storage.getPagos()
+                    .filter(p => parseInt(p.usuario_id) === parseInt(usuarioId))
+                    .filter(p => String(p.tipo || '').toLowerCase() === 'mensualidad')
+                    .filter(p => p.fecha)
+                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                return pagos.length ? pagos[0] : null;
+            }
 
-                // Intentar buscar por: ID, DNI o Nombre/Apellido
-                const user = usuarios.find(u =>
-                    u.id.toString() === busqueda ||
-                    (u.dni && u.dni.toString() === busqueda) ||
-                    (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
-                    (u.apellido && u.apellido.toLowerCase().includes(busqueda))
-                );
+            function getEstadoPagoBadge(usuarioId) {
+                const ultimo = getUltimoPagoMensualidadUsuario(usuarioId);
+                if (!ultimo) {
+                    return {
+                        badgeClass: 'bg-secondary',
+                        texto: 'SIN PAGO'
+                    };
+                }
 
-                if (user) {
-                    const id = user.id;
+                const estadoLower = String(ultimo.estado || '').toLowerCase();
+                const esPendiente = estadoLower.includes('pendiente');
+                if (esPendiente) {
+                    return {
+                        badgeClass: 'bg-warning text-dark',
+                        texto: 'PAGO PENDIENTE'
+                    };
+                }
+
+                return {
+                    badgeClass: 'bg-success',
+                    texto: 'PAGO OK'
+                };
+            }
+
+            function renderBuscarUsuario(usuarioId) {
+                const user = storage.getUsuario(usuarioId);
+                if (!user) {
                     const container = document.getElementById('infoUsuario');
-                    const clasesUsuario = storage.getClasesUsuario(id);
-                    const clasesHtml = clasesUsuario.length > 0
-                        ? `<div class="mt-3"><h6>Actividades inscritas:</h6><ul>${clasesUsuario.map(c => `<li>${c.nombre} - ${c.horario}</li>`).join('')}</ul></div>`
-                        : '<div class="mt-3"><p class="text-muted">No está inscrito en ninguna actividad</p></div>';
+                    if (container) container.innerHTML = '';
+                    showAlert('Usuario no encontrado', 'warning');
+                    return;
+                }
 
-                    // Verificar estado de vencimiento
-                    const vencida = estaVencida(user.fecha_vencimiento);
-                    const estadoClass = vencida ? 'text-danger fw-bold' : 'text-success fw-bold';
-                    const estadoTexto = vencida ? '⚠️ VENCIDA' : '✅ ACTIVA';
-                    const badgeClass = vencida ? 'bg-danger' : 'bg-success';
-                    const estadoBadge = vencida ? 'VENCIDA' : 'ACTIVA';
+                window.__lastBuscarUserId = user.id;
 
-                    container.innerHTML = `
+                const container = document.getElementById('infoUsuario');
+                const clasesUsuario = storage.getClasesUsuario(user.id);
+                const clasesHtml = clasesUsuario.length > 0
+                    ? `<div class="mt-3"><h6>Actividades inscritas:</h6><ul>${clasesUsuario.map(c => `<li>${c.nombre} - ${c.horario}</li>`).join('')}</ul></div>`
+                    : '<div class="mt-3"><p class="text-muted">No está inscrito en ninguna actividad</p></div>';
+
+                const vencida = estaVencida(user.fecha_vencimiento);
+                const estadoClass = vencida ? 'text-danger fw-bold' : 'text-success fw-bold';
+                const estadoTexto = vencida ? '⚠️ VENCIDA' : '✅ ACTIVA';
+                const badgeClass = vencida ? 'bg-danger' : 'bg-success';
+                const estadoBadge = vencida ? 'VENCIDA' : 'ACTIVA';
+
+                const pagoBadge = getEstadoPagoBadge(user.id);
+
+                container.innerHTML = `
                 <div class="user-info-card ${vencida ? 'border-danger' : ''}">
                     <div class="d-flex align-items-center mb-3">
                         <div class="user-avatar me-3">
@@ -1820,7 +1853,8 @@
                         <div>
                             <h4 class="mb-1">${user.nombre} ${user.apellido}</h4>
                             <span class="badge bg-primary me-2">ID: ${user.id}</span>
-                            <span class="badge ${badgeClass}">MEMBRESÍA ${estadoBadge}</span>
+                            <span class="badge ${badgeClass} me-2">MEMBRESÍA ${estadoBadge}</span>
+                            <span class="badge ${pagoBadge.badgeClass}">${pagoBadge.texto}</span>
                         </div>
                     </div>
                     <div class="row">
@@ -1839,6 +1873,23 @@
                     ${clasesHtml}
                 </div>
             `;
+            }
+
+            // BUSCAR USUARIO
+            $('#formBuscarUsuario').submit(e => {
+                e.preventDefault();
+                const busqueda = document.getElementById('usuario_id_buscar').value.trim().toLowerCase();
+                const usuarios = storage.getUsuarios();
+
+                const user = usuarios.find(u =>
+                    u.id.toString() === busqueda ||
+                    (u.dni && u.dni.toString() === busqueda) ||
+                    (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                    (u.apellido && u.apellido.toLowerCase().includes(busqueda))
+                );
+
+                if (user) {
+                    renderBuscarUsuario(user.id);
                 } else {
                     showAlert('Usuario no encontrado', 'warning');
                 }
