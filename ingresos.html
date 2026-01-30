@@ -142,6 +142,7 @@
                         <th>Nombre</th>
                         <th>Apellido</th>
                         <th>Fecha/Hora</th>
+                        <th>Estado Pago</th>
                         <th>Acción</th> <!-- Nueva columna -->
                     </tr>
                 </thead>
@@ -197,11 +198,13 @@
             init() {
                 if (!localStorage.getItem('gym_usuarios')) localStorage.setItem('gym_usuarios', '[]');
                 if (!localStorage.getItem('gym_ingresos')) localStorage.setItem('gym_ingresos', '[]');
+                if (!localStorage.getItem('gym_pagos')) localStorage.setItem('gym_pagos', '[]');
                 if (!localStorage.getItem('gym_next_id')) localStorage.setItem('gym_next_id', '1');
             }
             getNextId() { const n = parseInt(localStorage.getItem('gym_next_id')); localStorage.setItem('gym_next_id', String(n + 1)); return n; }
             getUsuarios() { return JSON.parse(localStorage.getItem('gym_usuarios') || '[]'); }
             getUsuario(id) { return this.getUsuarios().find(u => u.id === parseInt(id)); }
+            getPagos() { return JSON.parse(localStorage.getItem('gym_pagos') || '[]'); }
             getIngresos() { return JSON.parse(localStorage.getItem('gym_ingresos') || '[]'); }
             addIngreso(i) { const arr = this.getIngresos(); i.id = this.getNextId(); arr.push(i); localStorage.setItem('gym_ingresos', JSON.stringify(arr)); }
         }
@@ -226,16 +229,24 @@
         // DataTable
         const dt = $('#tablaIngresos').DataTable({ language: { search: 'Buscar:', lengthMenu: 'Mostrar _MENU_', info: '_START_ - _END_ de _TOTAL_', paginate: { first: 'Primero', last: 'Último', next: 'Siguiente', previous: 'Anterior' }, emptyTable: 'Sin registros' }, order: [[0, 'desc']] });
         function refrescarTabla() {
+            const pagos = storage.getPagos();
             const data = storage.getIngresos().map(i => {
                 const usuario = storage.getUsuario(i.usuario_id);
                 const nombre = usuario ? usuario.nombre : 'Desconocido';
                 const apellido = usuario ? usuario.apellido : '';
+
+                const pagosUsuario = pagos
+                    .filter(p => parseInt(p.usuario_id) === parseInt(i.usuario_id))
+                    .filter(p => p.fecha)
+                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                const estadoPago = pagosUsuario.length ? (pagosUsuario[0].estado || 'N/A') : 'Sin pagos';
                 return [
                     i.id,
                     i.usuario_id,
                     nombre,
                     apellido,
                     new Date(i.fecha).toLocaleString('es-ES'),
+                    estadoPago,
                     `<button class='btn btn-sm btn-warning me-2' onclick='editarIngreso(${i.id})'>Editar</button>
              <button class='btn btn-sm btn-danger' onclick='eliminarIngreso(${i.id})'>Eliminar</button>`
                 ];

@@ -1169,10 +1169,14 @@
                 pago.id = this.getNextId();
                 pagos.push(pago);
                 localStorage.setItem('gym_pagos', JSON.stringify(pagos));
+                if (pago && pago.usuario_id != null) {
+                    this.recalcularVencimientoUsuario(pago.usuario_id);
+                }
                 return pago;
             }
 
             updatePago(id, data) {
+                const pagoExistente = this.getPago(id);
                 let pagos = this.getPagos();
                 pagos = pagos.map(p => {
                     if (p.id === parseInt(id)) {
@@ -1181,12 +1185,60 @@
                     return p;
                 });
                 localStorage.setItem('gym_pagos', JSON.stringify(pagos));
+
+                if (pagoExistente && pagoExistente.usuario_id != null) {
+                    this.recalcularVencimientoUsuario(pagoExistente.usuario_id);
+                }
+                if (data && data.usuario_id != null && (!pagoExistente || parseInt(data.usuario_id) !== parseInt(pagoExistente.usuario_id))) {
+                    this.recalcularVencimientoUsuario(data.usuario_id);
+                }
             }
 
             deletePago(id) {
+                const pagoExistente = this.getPago(id);
                 let pagos = this.getPagos();
                 pagos = pagos.filter(p => p.id !== parseInt(id));
                 localStorage.setItem('gym_pagos', JSON.stringify(pagos));
+
+                if (pagoExistente && pagoExistente.usuario_id != null) {
+                    this.recalcularVencimientoUsuario(pagoExistente.usuario_id);
+                }
+            }
+
+            esPagoMensualidadValido(pago) {
+                if (!pago || pago.tipo !== 'Mensualidad') return false;
+                if (!pago.fecha) return false;
+                if (!pago.estado) return true;
+                return String(pago.estado).toLowerCase().includes('pagado');
+            }
+
+            recalcularVencimientoUsuario(usuarioId) {
+                const usuario = this.getUsuario(usuarioId);
+                if (!usuario) return;
+
+                const pagos = this.getPagos()
+                    .filter(p => parseInt(p.usuario_id) === parseInt(usuarioId))
+                    .filter(p => this.esPagoMensualidadValido(p))
+                    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+                if (pagos.length === 0) {
+                    this.updateUsuario(usuarioId, { fecha_vencimiento: '' });
+                    return;
+                }
+
+                let vencimiento = null;
+                for (const p of pagos) {
+                    const fechaPago = new Date(p.fecha + 'T12:00:00');
+                    if (!vencimiento) {
+                        vencimiento = new Date(fechaPago);
+                    } else if (fechaPago > vencimiento) {
+                        vencimiento = new Date(fechaPago);
+                    }
+                    vencimiento.setMonth(vencimiento.getMonth() + 1);
+                }
+
+                const nuevaFechaStr = vencimiento.toISOString().split('T')[0];
+                this.updateUsuario(usuarioId, { fecha_vencimiento: nuevaFechaStr });
             }
 
             // CLASES
@@ -1656,7 +1708,9 @@
 
                 // Lógica de Renovación Automática
                 let mensajeExtra = "";
-                if (body.tipo === 'Mensualidad') {
+                const estadoLower = String(body.estado || '').toLowerCase();
+                const esPagado = !body.estado || estadoLower.includes('pagado');
+                if (body.tipo === 'Mensualidad' && esPagado) {
                     // Determinar fecha base: si todavía no vence, se suma a la fecha actual de vencimiento.
                     // Si ya venció, se suma a partir de HOY.
                     let fechaBase = new Date(); // Hoy por defecto
@@ -1894,15 +1948,37 @@
             // MOSTRAR CLASES DE USUARIO
             $('#btnMostrarClasesUsuario').click(() => {
                 const inputVal = document.getElementById('usuario_clase').value.trim();
-                if (!inputVal) {
-                    showAlert('Ingresa el ID o DNI del usuario', 'warning');
+                const selectedId = $('#usuario_clase').data('selected-id');
+
+                if (!inputVal && !selectedId) {
+                    showAlert('Ingresa el ID, DNI o Nombre del usuario', 'warning');
                     return;
                 }
 
-                let usuario = storage.getUsuario(inputVal);
-                if (!usuario) {
+                let usuario = null;
+
+                if (selectedId) {
+                    usuario = storage.getUsuario(selectedId);
+                }
+
+                if (!usuario && inputVal) {
+                    usuario = storage.getUsuario(inputVal);
+                }
+
+                if (!usuario && inputVal) {
                     const usuarios = storage.getUsuarios();
                     usuario = usuarios.find(u => u.dni && String(u.dni) === inputVal);
+                }
+
+                if (!usuario && inputVal) {
+                    const busqueda = inputVal.toLowerCase();
+                    const usuarios = storage.getUsuarios();
+                    usuario = usuarios.find(u => {
+                        const fullName = `${u.nombre} ${u.apellido}`.toLowerCase();
+                        return fullName.includes(busqueda) ||
+                            (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                            (u.apellido && u.apellido.toLowerCase().includes(busqueda));
+                    });
                 }
 
                 if (!usuario) {
@@ -2162,8 +2238,16 @@
                 });
             }
             const ingresos = storage.getIngresos();
+            const pagos = storage.getPagos();
             tablaIngresos.clear();
-            tablaIngresos.rows.add(ingresos.map(i => [i.id, i.usuario_id, new Date(i.fecha).toLocaleString('es-ES')]));
+            tablaIngresos.rows.add(ingresos.map(i => {
+                const pagosUsuario = pagos
+                    .filter(p => parseInt(p.usuario_id) === parseInt(i.usuario_id))
+                    .filter(p => p.fecha)
+                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                const estado = pagosUsuario.length ? (pagosUsuario[0].estado || 'N/A') : 'Sin pagos';
+                return [i.id, i.usuario_id, new Date(i.fecha).toLocaleString('es-ES'), estado];
+            }));
             tablaIngresos.draw();
             new bootstrap.Modal(document.getElementById('historialIngresosModal')).show();
         });
@@ -2398,6 +2482,7 @@
                                     <th>ID</th>
                                     <th>Miembro ID</th>
                                     <th>Fecha/Hora</th>
+                                    <th>Estado</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
