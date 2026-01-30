@@ -212,8 +212,12 @@
 
         // Función para verificar si una membresía está vencida
         function estaVencida(fechaVencimiento) {
+            if (!fechaVencimiento || String(fechaVencimiento).trim() === '') return true;
             const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
             const vencimiento = new Date(fechaVencimiento);
+            if (Number.isNaN(vencimiento.getTime())) return true;
+            vencimiento.setHours(0, 0, 0, 0);
             return vencimiento < hoy;
         }
 
