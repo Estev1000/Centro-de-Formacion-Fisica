@@ -1206,10 +1206,12 @@
             }
 
             esPagoMensualidadValido(pago) {
-                if (!pago || pago.tipo !== 'Mensualidad') return false;
+                if (!pago) return false;
+                if (String(pago.tipo || '').toLowerCase() !== 'mensualidad') return false;
                 if (!pago.fecha) return false;
                 if (!pago.estado) return true;
-                return String(pago.estado).toLowerCase().includes('pagado');
+                const estadoLower = String(pago.estado).toLowerCase();
+                return estadoLower.includes('pagado') || estadoLower.includes('pendiente');
             }
 
             recalcularVencimientoUsuario(usuarioId) {
@@ -1839,10 +1841,11 @@
                 const vencida = estaVencida(user.fecha_vencimiento);
                 const estadoClass = vencida ? 'text-danger fw-bold' : 'text-success fw-bold';
                 const estadoTexto = vencida ? '⚠️ VENCIDA' : '✅ ACTIVA';
-                const badgeClass = vencida ? 'bg-danger' : 'bg-success';
-                const estadoBadge = vencida ? 'VENCIDA' : 'ACTIVA';
-
                 const pagoBadge = getEstadoPagoBadge(user.id);
+
+                const tienePagoPendiente = String(pagoBadge.texto || '').toLowerCase().includes('pendiente');
+                const badgeClass = vencida ? 'bg-danger' : (tienePagoPendiente ? 'bg-warning text-dark' : 'bg-success');
+                const estadoBadge = vencida ? 'VENCIDA' : (tienePagoPendiente ? 'PENDIENTE' : 'ACTIVA');
 
                 container.innerHTML = `
                 <div class="user-info-card ${vencida ? 'border-danger' : ''}">
