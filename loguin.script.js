@@ -26,12 +26,10 @@ function getNextId() {
 }
 
 function isFechaVencimientoValidaYVigente(fechaVencimientoStr) {
-    if (!fechaVencimientoStr || String(fechaVencimientoStr).trim() === '') return false;
-    const fechaVencimiento = new Date(fechaVencimientoStr);
-    if (Number.isNaN(fechaVencimiento.getTime())) return false;
+    const fechaVencimiento = parseDateOnly(fechaVencimientoStr);
+    if (!fechaVencimiento) return false;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    fechaVencimiento.setHours(0, 0, 0, 0);
     return fechaVencimiento >= hoy;
 }
 
@@ -46,6 +44,13 @@ function getUltimoPagoMensualidadUsuario(pagos, userId) {
 
 function parseDateOnly(dateStr) {
     if (!dateStr || String(dateStr).trim() === '') return null;
+    
+    // Fix: Parse YYYY-MM-DD manually to avoid UTC conversion issues
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    }
+
     const d = new Date(dateStr);
     if (Number.isNaN(d.getTime())) return null;
     d.setHours(0, 0, 0, 0);
@@ -53,8 +58,10 @@ function parseDateOnly(dateStr) {
 }
 
 function formatDateEsShort(dateStr) {
+    // If we already have a Date object or valid YYYY-MM-DD string, use parseDateOnly to get local date
     const d = parseDateOnly(dateStr);
     if (!d) return '';
+    
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
