@@ -143,7 +143,7 @@
                         <th>Apellido</th>
                         <th>Fecha/Hora</th>
                         <th>Estado Pago</th>
-                        <th>Actividad</th>
+                        <th>Actividades Inscritas</th>
                         <th>Acción</th> <!-- Nueva columna -->
                     </tr>
                 </thead>
@@ -264,6 +264,12 @@
                 const nombre = usuario ? usuario.nombre : 'Desconocido';
                 const apellido = usuario ? usuario.apellido : '';
 
+                // Obtener actividades inscritas ACTUALES del usuario
+                const clasesUsuario = usuario ? storage.getClasesUsuario(i.usuario_id) : [];
+                const actividadesInscritas = clasesUsuario.length > 0
+                    ? clasesUsuario.map(c => c.nombre).join(', ')
+                    : 'Sin inscripciones';
+
                 const pagosUsuario = pagos
                     .filter(p => parseInt(p.usuario_id) === parseInt(i.usuario_id))
                     .filter(p => p.fecha)
@@ -276,7 +282,7 @@
                     apellido,
                     new Date(i.fecha).toLocaleString('es-ES'),
                     estadoPago,
-                    i.actividad || 'N/A',
+                    actividadesInscritas,
                     `<button class='btn btn-sm btn-warning me-2' onclick='editarIngreso(${i.id})'>Editar</button>
              <button class='btn btn-sm btn-danger' onclick='eliminarIngreso(${i.id})'>Eliminar</button>`
                 ];
