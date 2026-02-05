@@ -25,6 +25,24 @@ function getNextId() {
     return nextId;
 }
 
+function getClases() {
+    return JSON.parse(localStorage.getItem('gym_clases') || '[]');
+}
+
+function getInscripciones() {
+    return JSON.parse(localStorage.getItem('gym_inscripciones') || '[]');
+}
+
+function getClasesUsuario(usuarioId) {
+    const inscripciones = getInscripciones();
+    const clases = getClases();
+    const clasesUsuario = inscripciones
+        .filter(i => i.usuario_id === parseInt(usuarioId))
+        .map(i => clases.find(c => c.id === i.clase_id))
+        .filter(c => c);
+    return clasesUsuario;
+}
+
 function isFechaVencimientoValidaYVigente(fechaVencimientoStr) {
     const fechaVencimiento = parseDateOnly(fechaVencimientoStr);
     if (!fechaVencimiento) return false;
@@ -44,7 +62,7 @@ function getUltimoPagoMensualidadUsuario(pagos, userId) {
 
 function parseDateOnly(dateStr) {
     if (!dateStr || String(dateStr).trim() === '') return null;
-    
+
     // Fix: Parse YYYY-MM-DD manually to avoid UTC conversion issues
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         const [year, month, day] = dateStr.split('-').map(Number);
@@ -61,7 +79,7 @@ function formatDateEsShort(dateStr) {
     // If we already have a Date object or valid YYYY-MM-DD string, use parseDateOnly to get local date
     const d = parseDateOnly(dateStr);
     if (!d) return '';
-    
+
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
@@ -209,12 +227,16 @@ function submitLogin() {
                 playSound('error');
                 startBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Denegado';
             } else {
+                const clasesUsuario = getClasesUsuario(user.id);
+                const actividad = clasesUsuario.map(c => c.nombre).join(', ') || 'Sin Actividad';
+
                 if (ultimoEsPendiente) {
                     const ingresos = getIngresos();
                     const newIngreso = {
                         id: getNextId(),
                         usuario_id: user.id,
-                        fecha: new Date().toISOString()
+                        fecha: new Date().toISOString(),
+                        actividad: actividad
                     };
                     ingresos.push(newIngreso);
                     saveIngresos(ingresos);
@@ -222,20 +244,21 @@ function submitLogin() {
                     showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido (PAGO PENDIENTE).`, 'warning');
                     playSound('warning');
                     startBtn.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Pendiente';
-                    return;
-                }
-                const ingresos = getIngresos();
-                const newIngreso = {
-                    id: getNextId(),
-                    usuario_id: user.id,
-                    fecha: new Date().toISOString()
-                };
-                ingresos.push(newIngreso);
-                saveIngresos(ingresos);
+                } else {
+                    const ingresos = getIngresos();
+                    const newIngreso = {
+                        id: getNextId(),
+                        usuario_id: user.id,
+                        fecha: new Date().toISOString(),
+                        actividad: actividad
+                    };
+                    ingresos.push(newIngreso);
+                    saveIngresos(ingresos);
 
-                showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido.`, 'success');
-                playSound('success');
-                startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Adelante';
+                    showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido.`, 'success');
+                    playSound('success');
+                    startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Adelante';
+                }
             }
 
         } else {
